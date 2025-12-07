@@ -18,10 +18,8 @@ import {
   ArrowDownToLine,
   Footprints,
   BicepsFlexed,
-  Filter,
   Calculator,
   ChevronDown,
-  UserCheck,
   Flame,
   Scale,
   ClipboardList,
@@ -29,7 +27,6 @@ import {
   Ruler,
   Weight,
   Save,
-  Cloud,
   Download,
   Upload
 } from 'lucide-react';
