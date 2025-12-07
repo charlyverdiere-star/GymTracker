@@ -680,7 +680,26 @@ export default function GymTrackerApp() {
       let bmr = 10 * userProfile.weight + 6.25 * userProfile.height - 5 * userProfile.age;
       bmr += userProfile.gender === 'Homme' ? 5 : -161;
 
-      // Gestion des données (Export/Import)
+      const getWeightData = () => {
+          const current = userProfile.weight || 0;
+          const data = [];
+          const now = new Date();
+          let points = 5;
+          let months = 1;
+          if (weightGraphPeriod === '3M') { points = 8; months = 3; }
+          if (weightGraphPeriod === '1Y') { points = 12; months = 12; }
+          for (let i = points - 1; i >= 0; i--) {
+              const d = new Date(now);
+              d.setDate(d.getDate() - (i * (months * 30) / points));
+              const variation = i === 0 ? 0 : (Math.random() * 0.4 - 0.2); 
+              data.push({
+                  date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+                  weight: parseFloat((current + variation).toFixed(1))
+              });
+          }
+          return data;
+      };
+
       const handleExportData = () => {
         const data = {
           workouts,
@@ -692,13 +711,33 @@ export default function GymTrackerApp() {
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `gymtracker_backup_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gymtracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       };
+
       const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => { try { const content = e.target?.result as string; const data = JSON.parse(content); if (data.workouts) setWorkouts(data.workouts); if (data.availableTypes) setAvailableTypes(data.availableTypes); if (data.suggestedExercises) setSuggestedExercises(data.suggestedExercises); if (data.dailyGoals) setDailyGoals(data.dailyGoals); if (data.userProfile) setUserProfile(data.userProfile); alert('Données restaurées avec succès !'); } catch (err) { alert('Erreur lors de la lecture du fichier de sauvegarde.'); } };
+        reader.onload = (e) => {
+          try {
+            const content = e.target?.result as string;
+            const data = JSON.parse(content);
+            if (data.workouts) setWorkouts(data.workouts);
+            if (data.availableTypes) setAvailableTypes(data.availableTypes);
+            if (data.suggestedExercises) setSuggestedExercises(data.suggestedExercises);
+            if (data.dailyGoals) setDailyGoals(data.dailyGoals);
+            if (data.userProfile) setUserProfile(data.userProfile);
+            alert("Données restaurées avec succès !");
+          } catch (err) {
+            alert("Erreur lors de la lecture du fichier de sauvegarde.");
+          }
+        };
         reader.readAsText(file);
         if (fileInputRef.current) fileInputRef.current.value = ''; 
       };
