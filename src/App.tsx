@@ -27,6 +27,7 @@ import {
   Ruler,
   Weight,
   Save,
+  Cloud,
   Download,
   Upload
 } from 'lucide-react';
