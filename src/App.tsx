@@ -94,7 +94,7 @@ type WorkoutSession = {
   date: string;
   type: WorkoutType;
   exercises: ExerciseData[];
-  duration?: number;
+  duration?: number; // in minutes
   timestamp?: number;
 };
 
@@ -163,7 +163,7 @@ const PIE_COLORS = ['#f97316', '#3b82f6', '#a855f7', '#10b981', '#ef4444', '#eab
 export default function GymTrackerApp() {
   const [activeTab, setActiveTab] = useState<'home' | 'workout' | 'stats' | 'history' | 'summary' | 'profile'>('home');
   
-  // -- PERSISTENCE: Chargement --
+  // -- PERSISTENCE: Chargement des données depuis le LocalStorage --
   const [workouts, setWorkouts] = useState<WorkoutSession[]>(() => {
       if (typeof window !== 'undefined') {
           const saved = localStorage.getItem('gymtracker_workouts');
@@ -204,7 +204,7 @@ export default function GymTrackerApp() {
       return { gender: 'Homme', age: 20, weight: 75, height: 176 };
   });
 
-  // -- PERSISTENCE: Sauvegarde --
+  // -- PERSISTENCE: Sauvegarde automatique --
   useEffect(() => localStorage.setItem('gymtracker_workouts', JSON.stringify(workouts)), [workouts]);
   useEffect(() => localStorage.setItem('gymtracker_types', JSON.stringify(availableTypes)), [availableTypes]);
   useEffect(() => localStorage.setItem('gymtracker_exercises', JSON.stringify(suggestedExercises)), [suggestedExercises]);
@@ -284,10 +284,11 @@ export default function GymTrackerApp() {
       if (weightGraphPeriod === '3M') { points = 8; months = 3; }
       if (weightGraphPeriod === '1Y') { points = 12; months = 12; }
 
+      // Simulation pour afficher une courbe cohérente basée sur le poids actuel uniquement
+      // Pour éviter de voir une ligne vide si pas d'historique
       for (let i = points - 1; i >= 0; i--) {
           const d = new Date(now);
           d.setDate(d.getDate() - (i * (months * 30) / points));
-          // Simulation légère pour éviter un graphe vide si pas d'historique
           const variation = i === 0 ? 0 : (Math.random() * 0.4 - 0.2); 
           data.push({
               date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
@@ -299,6 +300,7 @@ export default function GymTrackerApp() {
 
   // --- Actions ---
 
+  // Export Data Logic
   const handleExportData = () => {
       const data = {
           workouts,
@@ -320,6 +322,7 @@ export default function GymTrackerApp() {
       URL.revokeObjectURL(url);
   };
 
+  // Import Data Logic
   const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
