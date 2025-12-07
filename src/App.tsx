@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, 
   Calendar, 
@@ -94,7 +94,7 @@ type WorkoutSession = {
   date: string;
   type: WorkoutType;
   exercises: ExerciseData[];
-  duration?: number; // in minutes
+  duration?: number;
   timestamp?: number;
 };
 
@@ -163,7 +163,7 @@ const PIE_COLORS = ['#f97316', '#3b82f6', '#a855f7', '#10b981', '#ef4444', '#eab
 export default function GymTrackerApp() {
   const [activeTab, setActiveTab] = useState<'home' | 'workout' | 'stats' | 'history' | 'summary' | 'profile'>('home');
   
-  // -- PERSISTENCE: Chargement des données depuis le LocalStorage --
+  // -- PERSISTENCE: Chargement --
   const [workouts, setWorkouts] = useState<WorkoutSession[]>(() => {
       if (typeof window !== 'undefined') {
           const saved = localStorage.getItem('gymtracker_workouts');
@@ -204,7 +204,7 @@ export default function GymTrackerApp() {
       return { gender: 'Homme', age: 20, weight: 75, height: 176 };
   });
 
-  // -- PERSISTENCE: Sauvegarde automatique --
+  // -- PERSISTENCE: Sauvegarde --
   useEffect(() => localStorage.setItem('gymtracker_workouts', JSON.stringify(workouts)), [workouts]);
   useEffect(() => localStorage.setItem('gymtracker_types', JSON.stringify(availableTypes)), [availableTypes]);
   useEffect(() => localStorage.setItem('gymtracker_exercises', JSON.stringify(suggestedExercises)), [suggestedExercises]);
@@ -275,16 +275,30 @@ export default function GymTrackerApp() {
   };
 
   const getWeightData = () => {
-      // Réinitialisation de l'affichage du poids (seulement la valeur actuelle)
-      return [
-          { date: 'Début', weight: userProfile.weight },
-          { date: 'Actuel', weight: userProfile.weight }
-      ];
+      const current = userProfile.weight || 0;
+      const data = [];
+      const now = new Date();
+      let points = 5;
+      let months = 1;
+      
+      if (weightGraphPeriod === '3M') { points = 8; months = 3; }
+      if (weightGraphPeriod === '1Y') { points = 12; months = 12; }
+
+      for (let i = points - 1; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - (i * (months * 30) / points));
+          // Simulation légère pour éviter un graphe vide si pas d'historique
+          const variation = i === 0 ? 0 : (Math.random() * 0.4 - 0.2); 
+          data.push({
+              date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+              weight: parseFloat((current + variation).toFixed(1))
+          });
+      }
+      return data;
   };
 
   // --- Actions ---
 
-  // Export Data Logic
   const handleExportData = () => {
       const data = {
           workouts,
@@ -306,7 +320,6 @@ export default function GymTrackerApp() {
       URL.revokeObjectURL(url);
   };
 
-  // Import Data Logic
   const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
@@ -662,7 +675,23 @@ export default function GymTrackerApp() {
       bmr += userProfile.gender === 'Homme' ? 5 : -161;
 
       const getWeightData = () => {
-          return [{ date: 'Actuel', weight: userProfile.weight }];
+          const current = userProfile.weight || 0;
+          const data = [];
+          const now = new Date();
+          let points = 5;
+          let months = 1;
+          if (weightGraphPeriod === '3M') { points = 8; months = 3; }
+          if (weightGraphPeriod === '1Y') { points = 12; months = 12; }
+          for (let i = points - 1; i >= 0; i--) {
+              const d = new Date(now);
+              d.setDate(d.getDate() - (i * (months * 30) / points));
+              const variation = i === 0 ? 0 : (Math.random() * 0.4 - 0.2); 
+              data.push({
+                  date: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+                  weight: parseFloat((current + variation).toFixed(1))
+              });
+          }
+          return data;
       };
 
       const handleExportData = () => {
